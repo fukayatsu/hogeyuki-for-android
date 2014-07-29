@@ -6,23 +6,41 @@ import android.content.Intent;
 import android.net.Uri;
 import android.os.Bundle;
 import android.provider.MediaStore;
+import android.util.Log;
 import android.view.Menu;
 import android.view.MenuItem;
+import android.view.MotionEvent;
+import android.view.View;
 import android.widget.ImageView;
+import android.widget.RelativeLayout;
+
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.List;
 
 
-public class MainActivity extends Activity {
+public class MainActivity extends Activity implements View.OnTouchListener {
     static final int REQUEST_GALLERY = 990;
     static final int REQUEST_CAMERA  = 991;
 
     Uri mImageUri;
     ImageView mImageView;
+    ImageView mKao;
+    RelativeLayout mTouchArea;
+
+    private List<Integer> originalLayout;
+    private int offsetX;
+    private int offsetY;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
+
         mImageView  = (ImageView) findViewById(R.id.imageView);
+        mKao = (ImageView) findViewById(R.id.kao);
+        mTouchArea = (RelativeLayout) findViewById(R.id.touchArea);
+        mTouchArea.setOnTouchListener(this);
     }
 
 
@@ -60,6 +78,10 @@ public class MainActivity extends Activity {
                 startActivityForResult(Intent.createChooser(intent, "Select picture"), REQUEST_GALLERY);
                 return true;
             case R.id.action_reset:
+                if (originalLayout != null) {
+                    mKao.layout(originalLayout.get(0), originalLayout.get(1), originalLayout.get(2), originalLayout.get(3));
+                }
+
                 return true;
             case R.id.action_send:
                 return true;
@@ -80,5 +102,29 @@ public class MainActivity extends Activity {
             mImageView.setImageURI(mImageUri);
 
         }
+    }
+
+    @Override
+    public boolean onTouch(View v, MotionEvent event) {
+//        Log.d("touch", String.valueOf(event.getX()));
+        int x = (int) event.getRawX();
+        int y = (int) event.getRawY();
+
+        if (event.getAction() == MotionEvent.ACTION_MOVE) {
+            int diffX = x - offsetX;
+            int diffY = y - offsetY;
+
+            mKao.layout(mKao.getLeft()+diffX, mKao.getTop()+diffY, mKao.getRight()+diffX, mKao.getBottom()+diffY);
+
+            offsetX = x;
+            offsetY = y;
+        } else if (event.getAction() == MotionEvent.ACTION_DOWN) {
+            if (originalLayout == null) {
+                originalLayout = Arrays.asList(mKao.getLeft(), mKao.getTop(), mKao.getRight(), mKao.getBottom());
+            }
+            offsetX = x;
+            offsetY = y;
+        }
+        return false;
     }
 }
