@@ -7,10 +7,7 @@ import android.net.Uri;
 import android.os.Bundle;
 import android.provider.MediaStore;
 import android.util.Log;
-import android.view.Menu;
-import android.view.MenuItem;
-import android.view.MotionEvent;
-import android.view.View;
+import android.view.*;
 import android.widget.ImageView;
 import android.widget.RelativeLayout;
 
@@ -19,7 +16,9 @@ import java.util.Arrays;
 import java.util.List;
 
 
-public class MainActivity extends Activity implements View.OnTouchListener {
+public class MainActivity extends Activity implements View.OnTouchListener,
+        ScaleGestureDetector.OnScaleGestureListener,
+        GestureDetector.OnGestureListener {
     static final int REQUEST_GALLERY = 990;
     static final int REQUEST_CAMERA  = 991;
 
@@ -28,9 +27,15 @@ public class MainActivity extends Activity implements View.OnTouchListener {
     ImageView mKao;
     RelativeLayout mTouchArea;
 
-    private List<Integer> originalLayout;
-    private int offsetX;
-    private int offsetY;
+    List<Integer> originalLayout;
+    int mOriginalWidth;
+    int mOriginalHeight;
+    int offsetX;
+    int offsetY;
+    float mScaleFactor = 1.0f;
+
+    ScaleGestureDetector mScaleGestureDetector;
+    GestureDetector mGestureDetector;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -41,6 +46,9 @@ public class MainActivity extends Activity implements View.OnTouchListener {
         mKao = (ImageView) findViewById(R.id.kao);
         mTouchArea = (RelativeLayout) findViewById(R.id.touchArea);
         mTouchArea.setOnTouchListener(this);
+
+        mScaleGestureDetector = new ScaleGestureDetector(this, this);
+        mGestureDetector = new GestureDetector(this, this);
     }
 
 
@@ -79,6 +87,7 @@ public class MainActivity extends Activity implements View.OnTouchListener {
                 return true;
             case R.id.action_reset:
                 if (originalLayout != null) {
+                    mScaleFactor = 1.0f;
                     mKao.layout(originalLayout.get(0), originalLayout.get(1), originalLayout.get(2), originalLayout.get(3));
                 }
 
@@ -106,25 +115,92 @@ public class MainActivity extends Activity implements View.OnTouchListener {
 
     @Override
     public boolean onTouch(View v, MotionEvent event) {
-//        Log.d("touch", String.valueOf(event.getX()));
-        int x = (int) event.getRawX();
-        int y = (int) event.getRawY();
 
-        if (event.getAction() == MotionEvent.ACTION_MOVE) {
-            int diffX = x - offsetX;
-            int diffY = y - offsetY;
-
-            mKao.layout(mKao.getLeft()+diffX, mKao.getTop()+diffY, mKao.getRight()+diffX, mKao.getBottom()+diffY);
-
-            offsetX = x;
-            offsetY = y;
-        } else if (event.getAction() == MotionEvent.ACTION_DOWN) {
-            if (originalLayout == null) {
-                originalLayout = Arrays.asList(mKao.getLeft(), mKao.getTop(), mKao.getRight(), mKao.getBottom());
-            }
-            offsetX = x;
-            offsetY = y;
+        if (originalLayout == null) {
+            originalLayout = Arrays.asList(mKao.getLeft(), mKao.getTop(), mKao.getRight(), mKao.getBottom());
+            mOriginalWidth = mKao.getWidth();
+            mOriginalHeight = mKao.getHeight();
         }
+
+
+        if (mScaleGestureDetector != null) {
+            final boolean isInProgres = mScaleGestureDetector.isInProgress();
+            mScaleGestureDetector.onTouchEvent(event);
+            if (isInProgres || mScaleGestureDetector.isInProgress()) {
+                return true;
+            }
+        }
+        if (mGestureDetector != null) {
+            return mGestureDetector.onTouchEvent(event);
+        }
+
+        return false;
+    }
+
+    @Override
+    public boolean onScale(ScaleGestureDetector detector) {
+        scaleKao(detector.getScaleFactor() * mScaleFactor);
+        return false;
+    }
+
+    private void scaleKao(float scaleFactor) {
+
+        int centerX = (mKao.getLeft() + mKao.getRight()) / 2;
+        int centerY = (mKao.getTop() + mKao.getBottom()) / 2;
+        int width = (int) (mOriginalWidth * scaleFactor);
+        int height = (int) (mOriginalHeight * scaleFactor);
+
+        mKao.layout(centerX - width/2,
+                centerY - height/2,
+                centerX + width/2,
+                centerY + height/2);
+    }
+
+    @Override
+    public boolean onScaleBegin(ScaleGestureDetector detector) {
+        return true;
+    }
+
+    @Override
+    public void onScaleEnd(ScaleGestureDetector detector) {
+        mScaleFactor *= detector.getScaleFactor();
+    }
+
+    @Override
+    public boolean onDown(MotionEvent e) {
+        return false;
+    }
+
+    @Override
+    public void onShowPress(MotionEvent e) {
+
+    }
+
+    @Override
+    public boolean onSingleTapUp(MotionEvent e) {
+        return false;
+    }
+
+    @Override
+    public boolean onScroll(MotionEvent e1, MotionEvent e2, float distanceX, float distanceY) {
+        if (Math.abs(distanceX) > mKao.getWidth() /3 || Math.abs(distanceY) > mKao.getHeight()/3) {
+            return false;
+        }
+
+        mKao.layout(mKao.getLeft() - (int) distanceX,
+                mKao.getTop() - (int) distanceY,
+                mKao.getRight() - (int) distanceX,
+                mKao.getBottom() - (int) distanceY);
+        return false;
+    }
+
+    @Override
+    public void onLongPress(MotionEvent e) {
+
+    }
+
+    @Override
+    public boolean onFling(MotionEvent e1, MotionEvent e2, float velocityX, float velocityY) {
         return false;
     }
 }
