@@ -1,6 +1,7 @@
 package com.fukayatsu.hogeyuki;
 
 import android.app.Activity;
+import android.content.ContentResolver;
 import android.content.ContentValues;
 import android.content.Intent;
 import android.graphics.Bitmap;
@@ -8,14 +9,21 @@ import android.graphics.Canvas;
 import android.graphics.drawable.BitmapDrawable;
 import android.net.Uri;
 import android.os.Bundle;
+import android.os.Environment;
 import android.provider.MediaStore;
 import android.util.Log;
 import android.view.*;
 import android.widget.ImageView;
 import android.widget.RelativeLayout;
+import android.widget.Toast;
 
+import java.io.File;
+import java.io.FileOutputStream;
+import java.io.IOException;
+import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Date;
 import java.util.List;
 
 
@@ -130,7 +138,31 @@ public class MainActivity extends Activity implements View.OnTouchListener,
             canvas.drawBitmap(faceBitmap, (mKao.getLeft() - diffX) * scale, mKao.getTop() * scale, null);
         }
 
-        mImageView.setImageBitmap(canvasBitmap); // 仮
+        File dir = new File(Environment.getExternalStorageDirectory().getPath() + "/Hogeyuki/");
+        if (!dir.exists()) { dir.mkdir(); }
+
+        Date date = new Date();
+        SimpleDateFormat format = new SimpleDateFormat("yyyy-MM-dd_HHmmss");
+        String filename = format.format(date) + ".jpg";
+        String fullname = dir.getAbsolutePath() + "/" + filename;
+
+        try {
+            FileOutputStream os = new FileOutputStream(fullname);
+            canvasBitmap.compress(Bitmap.CompressFormat.JPEG, 100, os);
+        } catch (IOException e) {
+            e.printStackTrace();
+            Toast.makeText(this, "failure :(", Toast.LENGTH_SHORT).show();
+            return;
+        }
+
+        ContentValues values = new ContentValues();
+        ContentResolver contentResolver = getContentResolver();
+        values.put(MediaStore.Images.Media.MIME_TYPE, "image/jpeg");
+        values.put(MediaStore.Images.Media.TITLE, filename);
+        values.put("_data", fullname);
+        contentResolver.insert(MediaStore.Images.Media.EXTERNAL_CONTENT_URI, values);
+
+        Toast.makeText(this, "saved :)", Toast.LENGTH_SHORT).show();
     }
 
     @Override
