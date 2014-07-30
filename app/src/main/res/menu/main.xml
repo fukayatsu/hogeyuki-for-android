@@ -21,8 +21,8 @@
           android:title="Save to gallery"
           android:orderInCategory="90"
           android:showAsAction="never" />
-    <item android:id="@+id/action_settings"
-        android:title="@string/action_settings"
+    <item android:id="@+id/action_licences"
+        android:title="Licences"
         android:orderInCategory="100"
         android:showAsAction="never" />
 </menu>

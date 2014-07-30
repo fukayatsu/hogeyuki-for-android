@@ -1,6 +1,7 @@
 package com.fukayatsu.hogeyuki;
 
 import android.app.Activity;
+import android.app.AlertDialog;
 import android.content.ContentResolver;
 import android.content.ContentValues;
 import android.content.Intent;
@@ -102,16 +103,30 @@ public class MainActivity extends Activity implements View.OnTouchListener,
 
                 return true;
             case R.id.action_send:
+                String filename = saveFacedImage();
+                if (filename == null) {return false;}
+                intent = new Intent(Intent.ACTION_SEND);
+                intent.putExtra(Intent.EXTRA_STREAM, Uri.fromFile(new File(filename)));
+                intent.setType("image/*");
+                intent.putExtra(Intent.EXTRA_TEXT, " #ほげゆき ");
+                startActivity(Intent.createChooser(intent, "compatible apps:"));
                 return true;
             case R.id.action_save:
                 saveFacedImage();
+                return true;
+            case R.id.action_licences:
+                AlertDialog.Builder alertDialogBuilder = new AlertDialog.Builder(this);
+                alertDialogBuilder.setTitle("Licences");
+                alertDialogBuilder.setMessage(".+ゆき: (c) awayuki All rights reserved.");
+                AlertDialog alertDialog = alertDialogBuilder.create();
+                alertDialog.show();
                 return true;
         }
         return super.onOptionsItemSelected(item);
     }
 
-    private void saveFacedImage() {
-        if (mImageView.getDrawable() == null) { return; }
+    private String saveFacedImage() {
+        if (mImageView.getDrawable() == null) { return null; }
         Bitmap originalBitmap = ((BitmapDrawable)mImageView.getDrawable()).getBitmap();
         Bitmap faceBitmap = ((BitmapDrawable)mKao.getDrawable()).getBitmap();
 
@@ -152,7 +167,7 @@ public class MainActivity extends Activity implements View.OnTouchListener,
         } catch (IOException e) {
             e.printStackTrace();
             Toast.makeText(this, "failure :(", Toast.LENGTH_SHORT).show();
-            return;
+            return null;
         }
 
         ContentValues values = new ContentValues();
@@ -163,6 +178,7 @@ public class MainActivity extends Activity implements View.OnTouchListener,
         contentResolver.insert(MediaStore.Images.Media.EXTERNAL_CONTENT_URI, values);
 
         Toast.makeText(this, "saved :)", Toast.LENGTH_SHORT).show();
+        return fullname;
     }
 
     @Override
