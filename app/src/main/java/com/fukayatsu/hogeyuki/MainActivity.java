@@ -3,6 +3,9 @@ package com.fukayatsu.hogeyuki;
 import android.app.Activity;
 import android.content.ContentValues;
 import android.content.Intent;
+import android.graphics.Bitmap;
+import android.graphics.Canvas;
+import android.graphics.drawable.BitmapDrawable;
 import android.net.Uri;
 import android.os.Bundle;
 import android.provider.MediaStore;
@@ -30,8 +33,6 @@ public class MainActivity extends Activity implements View.OnTouchListener,
     List<Integer> originalLayout;
     int mOriginalWidth;
     int mOriginalHeight;
-    int offsetX;
-    int offsetY;
     float mScaleFactor = 1.0f;
 
     ScaleGestureDetector mScaleGestureDetector;
@@ -95,9 +96,41 @@ public class MainActivity extends Activity implements View.OnTouchListener,
             case R.id.action_send:
                 return true;
             case R.id.action_save:
+                saveFacedImage();
                 return true;
         }
         return super.onOptionsItemSelected(item);
+    }
+
+    private void saveFacedImage() {
+        if (mImageView.getDrawable() == null) { return; }
+        Bitmap originalBitmap = ((BitmapDrawable)mImageView.getDrawable()).getBitmap();
+        Bitmap faceBitmap = ((BitmapDrawable)mKao.getDrawable()).getBitmap();
+
+        float scale;
+        if (originalBitmap.getWidth() > originalBitmap.getHeight()) {
+            scale = 1.0f * originalBitmap.getWidth() / mImageView.getWidth();
+        } else {
+            scale = 1.0f * originalBitmap.getHeight() / mImageView.getHeight();
+        }
+        faceBitmap = Bitmap.createScaledBitmap(faceBitmap,
+                (int) (mKao.getWidth() * scale),
+                (int) (mKao.getWidth() * scale * faceBitmap.getHeight() / faceBitmap.getWidth()),
+                false);
+
+        Bitmap canvasBitmap = Bitmap.createBitmap(originalBitmap.getWidth(), originalBitmap.getHeight(), Bitmap.Config.ARGB_8888);
+        Canvas canvas = new Canvas(canvasBitmap);
+        canvas.drawBitmap(originalBitmap, 0, 0, null);
+
+        if (originalBitmap.getWidth() > originalBitmap.getHeight()) {
+             float diffY = (mImageView.getHeight() - mImageView.getWidth() * originalBitmap.getHeight() / originalBitmap.getWidth()) / 2;
+            canvas.drawBitmap(faceBitmap, mKao.getLeft() * scale, (mKao.getTop() - diffY) * scale, null);
+        } else {
+            float diffX = (mImageView.getWidth() - mImageView.getHeight() * originalBitmap.getWidth() / originalBitmap.getHeight()) / 2 ;
+            canvas.drawBitmap(faceBitmap, (mKao.getLeft() - diffX) * scale, mKao.getTop() * scale, null);
+        }
+
+        mImageView.setImageBitmap(canvasBitmap); // 仮
     }
 
     @Override
