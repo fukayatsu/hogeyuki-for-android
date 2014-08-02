@@ -11,6 +11,7 @@ import android.graphics.drawable.BitmapDrawable;
 import android.net.Uri;
 import android.os.Bundle;
 import android.os.Environment;
+import android.os.Parcelable;
 import android.provider.MediaStore;
 import android.util.Log;
 import android.view.*;
@@ -59,6 +60,13 @@ public class MainActivity extends Activity implements View.OnTouchListener,
 
         mScaleGestureDetector = new ScaleGestureDetector(this, this);
         mGestureDetector = new GestureDetector(this, this);
+
+        Intent intent = getIntent();
+        if (Intent.ACTION_SEND.equals(intent.getAction())) {
+            Uri uri = (Uri) intent.getParcelableExtra(Intent.EXTRA_STREAM);
+            if (uri == null) { return ; }
+            mImageView.setImageURI(uri);
+        }
     }
 
 
